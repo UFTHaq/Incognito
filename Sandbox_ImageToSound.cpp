@@ -1,4 +1,7 @@
 // Sandbox_ImageToSound.cpp : This file contains the 'main' function. Program execution begins and ends there.
+// Author : Ukhem Fahmi Thoriqul Haq
+// Title  : Image to Sound
+// Made   : 27 - 05 - 2024
 //
 
 #include <iostream>
@@ -259,8 +262,8 @@ void UpdateDraw() {
             Ratio image_ratio_old = { image_input.width, image_input.height };
             //int new_height = nearest_power_of_2(image_input.height);
             //int new_height = (1 << 9);
-            //int new_height = 480;
-            int new_height = 400;
+            int new_height = 480;
+            //int new_height = 400;
             //int new_width = static_cast<int>((static_cast<float>(new_height) / image_ratio_old.height) * image_ratio_old.width);
             int new_width = static_cast<int>((static_cast<float>(new_height) / image_ratio_old.height) * image_ratio_old.width) / 1.0F;
             std::cout << "height: " << new_height << "\nwidth: " << new_width << std::endl;
@@ -357,9 +360,9 @@ void ImageToSound(const Image& image, const char* filename) {
 
                 float amplitude = scale * static_cast<float>(image_data[y * width + x]) / 255;
                 //in[y][0] = amplitude * amplitude * amplitude;
-                in[y][0] = amplitude * amplitude;
+                //in[y][0] = amplitude * amplitude;
                 //in[y][0] = amplitude;
-                //in[y][0] = sqrtf(amplitude);
+                in[y][0] = sqrtf(amplitude);
                 //in[y][0] = scale * static_cast<float>(image_data[y * width + x]) / 255.0 * hann_coeff;
                 in[y][1] = 0;
             }
@@ -440,7 +443,7 @@ void ImageToSound(const Image& image, const char* filename) {
         // Save short audio data using libsndfile
         SF_INFO sfinfo;
         sfinfo.channels = 1;
-        sfinfo.samplerate = 44100;
+        sfinfo.samplerate = 48000;
         sfinfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
         SNDFILE* sndfile = sf_open(filename, SFM_WRITE, &sfinfo);
         if (!sndfile) {
