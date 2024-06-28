@@ -1,0 +1,14 @@
+﻿  Sandbox_ImageToSound.cpp
+D:\Coding\Raylib C++\Sandbox_ImageToSound\Sandbox_ImageToSound.cpp(53,39): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+D:\Coding\Raylib C++\Sandbox_ImageToSound\Sandbox_ImageToSound.cpp(177,32): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+D:\Coding\Raylib C++\Sandbox_ImageToSound\Sandbox_ImageToSound.cpp(177,22): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+D:\Coding\Raylib C++\Sandbox_ImageToSound\Sandbox_ImageToSound.cpp(259,27): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
+D:\Coding\Raylib C++\Sandbox_ImageToSound\Sandbox_ImageToSound.cpp(311,11): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
+D:\Coding\Raylib C++\Sandbox_ImageToSound\Sandbox_ImageToSound.cpp(338,33): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+D:\Coding\Raylib C++\Sandbox_ImageToSound\Sandbox_ImageToSound.cpp(352,74): warning C4244: 'argument': conversion from 'double' to 'unsigned int', possible loss of data
+  Generating code
+  1 of 210 functions ( 0.5%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    1 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  Sandbox_ImageToSound.vcxproj -> D:\Coding\Raylib C++\Sandbox_ImageToSound\x64\Release\Sandbox_ImageToSound.exe

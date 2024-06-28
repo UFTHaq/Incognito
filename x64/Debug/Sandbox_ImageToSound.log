@@ -1,0 +1,7 @@
+﻿  Sandbox_ImageToSound.cpp
+D:\Coding\Raylib C++\Sandbox_ImageToSound\Sandbox_ImageToSound.cpp(53,39): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+D:\Coding\Raylib C++\Sandbox_ImageToSound\Sandbox_ImageToSound.cpp(178,32): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+D:\Coding\Raylib C++\Sandbox_ImageToSound\Sandbox_ImageToSound.cpp(178,22): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+D:\Coding\Raylib C++\Sandbox_ImageToSound\Sandbox_ImageToSound.cpp(260,27): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
+D:\Coding\Raylib C++\Sandbox_ImageToSound\Sandbox_ImageToSound.cpp(353,33): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+  Sandbox_ImageToSound.vcxproj -> D:\Coding\Raylib C++\Sandbox_ImageToSound\x64\Debug\Sandbox_ImageToSound.exe
