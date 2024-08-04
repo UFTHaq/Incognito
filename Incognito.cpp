@@ -4,8 +4,10 @@
 // Made   : 27 - 05 - 2024
 //
 
-// TODO:
-// 1. Add padding in the image data as border, i think border will make the image is more consistent to fft analyzed.
+// ISSUES :
+// 1. Incognito Converter only works for once per life time. 
+//    (the 2nd, 3rd and so forth always end up broken file). I dont know why. 
+//    So after convert, need to close the app and re open it again to do converting again.
 // 
 //
 
@@ -418,6 +420,19 @@ void UpdateDrawUI() {
                 rect_l.height - name_space
             };
             DrawRectangleLinesEx(panel_input_image_base, 0.5F, WHITE);
+            static float base_factor_ratio{};
+            static bool print_once{ false };
+            if (!print_once) {
+                if (panel_input_image_base.width > panel_input_image_base.height) {
+                    base_factor_ratio = panel_input_image_base.width / panel_input_image_base.height;
+                    std::cout << "factor ratio: " << base_factor_ratio << std::endl;
+                }
+                else {
+                    base_factor_ratio = panel_input_image_base.height / panel_input_image_base.width;
+                    std::cout << "factor ratio: " << base_factor_ratio << std::endl;
+                }
+                print_once = true;
+            }
 
             Rectangle panel_input_image_name{
                 panel_input_image_base.x,
@@ -443,14 +458,27 @@ void UpdateDrawUI() {
                 {
                     p->image_input = LoadImage(c_file_path);
                     ImageSize imageOldSize = { (float)p->image_input.width, (float)p->image_input.height };
+                    std::cout << "image height: " << imageOldSize.height << ", width: " << imageOldSize.width << std::endl;
 
-                    int new_height = 480;
-                    int new_width = int((float(new_height) / imageOldSize.height) * imageOldSize.width * 1.1F);
-                    std::cout << "height: " << new_height << "\nwidth: " << new_width << std::endl;
+                    uint16_t new_height = 480;
+                    uint16_t new_width = int((float(new_height) / imageOldSize.height) * imageOldSize.width * 1.05F);
+                    std::cout << "image height: " << new_height << ", width: " << new_width << std::endl;
                     ImageSize imageNewSize = { (float)new_width, (float)new_height };
                     p->flexible_ratio = imageNewSize;
 
-                    if (imageNewSize.width > imageNewSize.height) {
+                    if (imageNewSize.width == imageNewSize.height) {
+                        float h = panel_input_image_base.height;
+                        float w = h;
+                        p->flexible_panel_input = {
+                            panel_input_image_base.x + (panel_input_image_base.width - w) / 2,
+                            panel_input_image_base.y + (panel_input_image_base.height - h) / 2,
+                            w,
+                            h
+                        };
+                        float image_factor_ratio = p->flexible_panel_input.width / p->flexible_panel_input.height;
+                        std::cout << "image factor ratio: " << image_factor_ratio << std::endl;
+                    }
+                    else if (imageNewSize.width > imageNewSize.height) {
                         float w = panel_input_image_base.width;
                         float h = imageNewSize.height / imageNewSize.width * panel_input_image_base.width;
                         p->flexible_panel_input = {
@@ -459,6 +487,21 @@ void UpdateDrawUI() {
                             w,
                             h
                         };
+                        float image_factor_ratio = p->flexible_panel_input.width / p->flexible_panel_input.height;
+                        std::cout << "image factor ratio: " << image_factor_ratio << std::endl;
+
+                        // For edge case weird ratio;
+                        if (image_factor_ratio < base_factor_ratio) {
+                            float h = panel_input_image_base.height;
+                            float w = imageNewSize.width / imageNewSize.height * panel_input_image_base.height;
+                            p->flexible_panel_input = {
+                                panel_input_image_base.x + (panel_input_image_base.width - w) / 2,
+                                panel_input_image_base.y + (panel_input_image_base.height - h) / 2,
+                                w,
+                                h
+                            };
+                            image_factor_ratio = p->flexible_panel_input.height / p->flexible_panel_input.width;
+                        }
                     }
                     else {
                         float h = panel_input_image_base.height;
@@ -469,6 +512,8 @@ void UpdateDrawUI() {
                             w,
                             h
                         };
+                        base_factor_ratio = p->flexible_panel_input.height / p->flexible_panel_input.width;
+                        std::cout << "image factor ratio: " << base_factor_ratio << std::endl;
                     }
                 }
                 p->reload_setup = true;
@@ -1209,93 +1254,16 @@ void ImageToAudio(const Image image, const std::string filename, int audioFormat
     std::cout << N << std::endl;
 
     std::vector<double> audio_data{};
+    std::cout << "Original audio size: " << audio_data.size() << std::endl;
     const float scale = 2.0F / 255.0F;
 
     unsigned char* image_data = (unsigned char*)image.data;
-
-    //{
-    //    // FFTW
-    //    fftw_complex* in = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * N);
-    //    fftw_complex* out = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * N);
-
-    //    for (int x = 0; x < width; x++) {
-    //        for (int y = 0; y < height; y++) {
-
-    //            float amplitude = scale * static_cast<float>(image_data[y * width + x]) / 255.0F;
-    //            //in[y][0] = amplitude * amplitude * amplitude;
-    //            //in[y][0] = amplitude * amplitude;
-    //            //in[y][0] = amplitude;
-    //            in[y][0] = sqrtf(amplitude);
-    //            in[y][1] = 0;
-    //        }
-
-    //        fftw_plan plan = fftw_plan_dft_1d(N, in, out, FFTW_BACKWARD, FFTW_MEASURE);
-    //        fftw_execute(plan);
-
-    //        for (int y = 0; y < height; y++) {
-    //            audio_data.push_back(out[y][0]);
-    //            in[y][0] = 0;
-    //            out[y][0] = 0;
-    //        }
-
-    //        fftw_destroy_plan(plan);
-    //    }
-
-    //    fftw_free(in);
-    //    fftw_free(out);
-    //}
-
-    //// Normalize audio data
-    //double max_value = *std::max_element(audio_data.begin(), audio_data.end());
-    //for (auto& sample : audio_data) {
-    //    sample /= max_value;
-    //}
-
-    //std::cout << "Original audio size: " << audio_data.size() << std::endl;
-
-    //// Downsampling to make it shorter
-    //std::vector<double> downsampled_audio_data{};
-    //for (size_t i = 0; i < audio_data.size(); i += 1) {
-    //    downsampled_audio_data.push_back(audio_data.at(i));
-    //}
-
-    //std::cout << "Downsampled audio size: " << downsampled_audio_data.size() << std::endl;
-
-    //{
-    //    std::vector<short> short_audio_data;
-    //    short_audio_data.reserve(downsampled_audio_data.size());
-    //    for (double sample : downsampled_audio_data) {
-    //        // Scale and clamp to valid short integer range (-32768 to 32767)
-    //        int scaled_sample = static_cast<int>(sample * 32767.0);
-    //        scaled_sample = std::clamp(scaled_sample, -32768, 32767);
-    //        short_audio_data.push_back(static_cast<short>(scaled_sample));
-    //    }
-
-    //    // Save short audio data using libsndfile
-    //    SF_INFO sfinfo;
-    //    sfinfo.channels = 1;
-    //    sfinfo.samplerate = 48000;
-    //    sfinfo.format = audioFormat | audioEncoder;
-    //    SNDFILE* sndfile = sf_open(filename.c_str(), SFM_WRITE, &sfinfo);
-    //    if (!sndfile) {
-    //        std::cerr << "Error opening sound file: " << sf_strerror(sndfile) << std::endl;
-    //        return;
-    //    }
-    //    else TraceLog(LOG_INFO, "I Think Encoding Success...");
-    //    sf_writef_short(sndfile, short_audio_data.data(), short_audio_data.size());
-    //    sf_close(sndfile);
-    //}
 
     {
         // FFTW
         fftw_complex* in = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * N);
         fftw_complex* out = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * N);
-
-        //std::vector<fftw_complex> in(N);
-        //std::vector<fftw_complex> out(N);
-        //fftw_plan plan = fftw_plan_dft_1d(N, in.data(), out.data(), FFTW_BACKWARD, FFTW_MEASURE);
         fftw_plan plan = fftw_plan_dft_1d(N, in, out, FFTW_BACKWARD, FFTW_MEASURE);
-
 
         for (size_t x = 0; x < width; x++) {
             for (size_t y = 0; y < height; y++) {
@@ -1329,16 +1297,17 @@ void ImageToAudio(const Image image, const std::string filename, int audioFormat
     for (auto& sample : audio_data) {
         sample /= max_value;
     }
-
     std::cout << "Original audio size: " << audio_data.size() << std::endl;
+
 
     // Downsampling to make it shorter
     std::vector<double> downsampled_audio_data{};
+    std::cout << "Downsampled audio size: " << downsampled_audio_data.size() << std::endl;
     for (size_t i = 0; i < audio_data.size(); i += 1) {
         downsampled_audio_data.push_back(audio_data.at(i));
     }
-
     std::cout << "Downsampled audio size: " << downsampled_audio_data.size() << std::endl;
+
 
     // Debug 
     std::cout << "size audio_data : " << audio_data.size() << std::endl;
@@ -1355,15 +1324,29 @@ void ImageToAudio(const Image image, const std::string filename, int audioFormat
             short_audio_data.push_back(static_cast<short>(scaled_sample));
         }
 
-        // Save shoty 16 bit audio data using libsndfile
+        // Save short 16 bit audio data using libsndfile
+        // Initialize SF_INFO
         SF_INFO sfinfo;
         sfinfo.channels = 2;
         sfinfo.samplerate = 48000;
         //sfinfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
         sfinfo.format = audioFormat | audioEncoder;
-        SNDFILE* sndfile = sf_open(filename.c_str(), SFM_WRITE, &sfinfo);
+        const char* path = filename.c_str();
+
+        // Open File
+        SNDFILE* sndfile = sf_open(path, SFM_WRITE, &sfinfo);
         if (!sndfile) {
             std::cerr << "Error opening sound file: " << sf_strerror(sndfile) << std::endl;
+            return;
+        }
+
+        // Check if the file is empty
+        if (sf_seek(sndfile, 0, SEEK_CUR) == 0) {
+            std::cout << "The file is empty and ready for writing." << std::endl;
+        }
+        else {
+            std::cerr << "Error: The file is not at the start position." << std::endl;
+            sf_close(sndfile);
             return;
         }
 
@@ -1394,86 +1377,6 @@ void ImageToAudio(const Image image, const std::string filename, int audioFormat
     std::cout << "downsampled_audio_data size: " << downsampled_audio_data.size() << std::endl;
     if (downsampled_audio_data.size() == 0) TraceLog(LOG_INFO, "DATA CLEAR : downsampled_audio_data");
 }
-
-//{
-//    // FFTW
-//    fftw_complex* in = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * N);
-//    fftw_complex* out = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * N);
-
-//    for (int x = 0; x < width; x++) {
-//        for (int y = 0; y < height; y++) {
-
-//            float amplitude_l = scale * static_cast<float>(image_data[y * width + x]) / 255.0F;
-//            //in[y][0] = amplitude * amplitude * amplitude;
-//            //in[y][0] = amplitude * amplitude;
-//            //in[y][0] = amplitude;
-//            in[y][0] = sqrtf(amplitude_l);
-//            in[y][1] = 0;
-//        }
-
-//        fftw_plan plan = fftw_plan_dft_1d(N, in, out, FFTW_BACKWARD, FFTW_MEASURE);
-//        fftw_execute(plan);
-
-//        for (int y = 0; y < height; y++) {
-//            audio_data.push_back(out[y][0]);
-//            audio_data.push_back(out[y][0]);
-//            in[y][0] = 0;
-//            out[y][0] = 0;
-//        }
-
-//        fftw_destroy_plan(plan);
-//    }
-
-//    fftw_free(in);
-//    fftw_free(out);
-//}
-
-//// Normalize audio data
-//double max_value = *std::max_element(audio_data.begin(), audio_data.end());
-//for (auto& sample : audio_data) {
-//    sample /= max_value;
-//}
-
-//std::cout << "Original audio size: " << audio_data.size() << std::endl;
-
-//// Downsampling to make it shorter
-//std::vector<double> downsampled_audio_data{};
-//for (size_t i = 0; i < audio_data.size(); i += 1) {
-//    downsampled_audio_data.push_back(audio_data.at(i));
-//}
-
-//std::cout << "Downsampled audio size: " << downsampled_audio_data.size() << std::endl;
-
-//{
-//    std::vector<float> float_audio_data{};
-//    float_audio_data.reserve(downsampled_audio_data.size());
-//    for (auto sample : downsampled_audio_data) {
-//        float_audio_data.push_back(static_cast<float>(sample));
-//    }
-//    // Save float 32 bit audio data using libsndfile
-//    SF_INFO sfinfo;
-//    sfinfo.channels = 2;
-//    sfinfo.samplerate = 48000;
-//    sfinfo.format = SF_FORMAT_WAV | SF_FORMAT_FLOAT;
-//    SNDFILE* sndfile = sf_open(filename.c_str(), SFM_WRITE, &sfinfo);
-//    if (!sndfile) {
-//        std::cerr << "Error opening sound file: " << sf_strerror(sndfile) << std::endl;
-//        return;
-//    }
-
-//    // Write interleaved stereo samples
-//    sf_count_t frames_written = sf_writef_float(sndfile, float_audio_data.data(), float_audio_data.size() / 2);
-//    if (frames_written != static_cast<sf_count_t>(float_audio_data.size() / 2)) {
-//        std::cerr << "Error writing sound file: " << sf_strerror(sndfile) << std::endl;
-//    }
-//    else {
-//        std::cout << "Encoding successful!" << std::endl;
-//    }
-
-//    sf_close(sndfile);
-//}
-
-//}
 
 
 
