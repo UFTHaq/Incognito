@@ -235,7 +235,7 @@ struct Plug {
     Texture2D texture_input{};
     Texture2D texture_output{};
     std::vector<std::string> pad_function{ "THICKNESS", "COLOR", "PLACE" };
-    std::vector<ButtonPadThickness> argument_thickness{ {2, 0}, {4, 1}, {6, 0}, {8,0}, {10,0} };
+    std::vector<ButtonPadThickness> argument_thickness{ {0,0}, {2, 0}, {4, 1}, {6, 0}, {8,0}, {10,0} };
     std::vector<ButtonPadColor> argument_color{ {BLACK, 0}, {DARKGRAY, 0}, {GRAY, 1}, {LIGHTGRAY, 0}, {RAYWHITE, 0} };
     std::vector<ButtonPadPlace> argument_place{ {BOTTOM, "BOTTOM", 1}, {TOP_BOTTOM, "TOP & BOT", 0} };
     std::vector<std::string> convert_function{ "TITLE", "FORMAT", "" };
@@ -248,6 +248,8 @@ struct Plug {
     int pad_thick{};
     Color pad_color{};
     int pad_place{};
+    float button_pad{ 5 };
+    float button_pad_factor{ 2.0F };
     std::string input_title{};
     std::string outputTitle{};
     int audioFormat{};
@@ -463,7 +465,7 @@ void UpdateDrawUI() {
                     std::cout << "image height: " << imageOldSize.height << ", width: " << imageOldSize.width << std::endl;
 
                     uint16_t new_height = 480;
-                    uint16_t new_width = int((float(new_height) / imageOldSize.height) * imageOldSize.width * 1.05F);
+                    uint16_t new_width = int((float(new_height) / imageOldSize.height) * imageOldSize.width * 1.1F);
                     std::cout << "image height: " << new_height << ", width: " << new_width << std::endl;
                     ImageSize imageNewSize = { (float)new_width, (float)new_height };
                     p->flexible_ratio = imageNewSize;
@@ -697,12 +699,11 @@ void UpdateDrawUI() {
                             };
                             DrawRectangleLinesExCustom(button_thick_base, 0.5F, WHITE);
 
-                            float pad = 8;
                             Rectangle ButtonThickness{
-                                button_thick_base.x + (pad * 1),
-                                button_thick_base.y + (pad * 1.5F),
-                                button_thick_base.width - (pad * 2),
-                                button_thick_base.height - (pad * 2 * 1.5F),
+                                button_thick_base.x + (p->button_pad * 1),
+                                button_thick_base.y + (p->button_pad * p->button_pad_factor),
+                                button_thick_base.width - (p->button_pad * 2),
+                                button_thick_base.height - (p->button_pad * 2 * p->button_pad_factor),
                             };
                             if (CheckCollisionPointRec(p->mouse_position, ButtonThickness)) {
                                 ButtonThick.isHover = true;
@@ -740,12 +741,11 @@ void UpdateDrawUI() {
                             };
                             DrawRectangleLinesExCustom(button_color_base, 0.5F, WHITE);
 
-                            float pad = 8;
                             Rectangle ButtonColorness{
-                                button_color_base.x + (pad * 1),
-                                button_color_base.y + (pad * 1.5F),
-                                button_color_base.width - (pad * 2),
-                                button_color_base.height - (pad * 2 * 1.5F),
+                                button_color_base.x + (p->button_pad * 1),
+                                button_color_base.y + (p->button_pad * p->button_pad_factor),
+                                button_color_base.width - (p->button_pad * 2),
+                                button_color_base.height - (p->button_pad * 2 * p->button_pad_factor),
                             };
                             if (CheckCollisionPointRec(p->mouse_position, ButtonColorness)) {
                                 ButtonColor.isHover = true;
@@ -790,12 +790,11 @@ void UpdateDrawUI() {
                             };
                             DrawRectangleLinesExCustom(button_place_base, 0.5F, WHITE);
 
-                            float pad = 8;
                             Rectangle ButtonPlacement{
-                                button_place_base.x + (pad * 1),
-                                button_place_base.y + (pad * 1.5F),
-                                button_place_base.width - (pad * 2),
-                                button_place_base.height - (pad * 2 * 1.5F),
+                                button_place_base.x + (p->button_pad * 1),
+                                button_place_base.y + (p->button_pad * p->button_pad_factor),
+                                button_place_base.width - (p->button_pad * 2),
+                                button_place_base.height - (p->button_pad * 2 * p->button_pad_factor),
                             };
                             if (CheckCollisionPointRec(p->mouse_position, ButtonPlacement)) {
                                 ButtonPlace.isHover = true;
@@ -893,12 +892,11 @@ void UpdateDrawUI() {
 
                     if (i == 0)
                     {
-                        float pad = 8;
                         Rectangle input_text_place{
-                            argument.x + (pad * 1),
-                            argument.y + (pad * 1.5F),
-                            argument.width - (pad * 2),
-                            argument.height - (pad * 2 * 1.5F),
+                            argument.x + (p->button_pad * 1),
+                            argument.y + (p->button_pad * p->button_pad_factor),
+                            argument.width - (p->button_pad * 2),
+                            argument.height - (p->button_pad * 2 * p->button_pad_factor),
                         };
                         DrawRectangleRec(input_text_place, RAYWHITE);
 
@@ -919,12 +917,11 @@ void UpdateDrawUI() {
                             };
                             DrawRectangleLinesExCustom(button_format_base, 0.5F, WHITE);
 
-                            float pad = 8;
                             Rectangle ButtonFormatness{
-                                button_format_base.x + (pad * 1),
-                                button_format_base.y + (pad * 1.5F),
-                                button_format_base.width - (pad * 2),
-                                button_format_base.height - (pad * 2 * 1.5F),
+                                button_format_base.x + (p->button_pad * 1),
+                                button_format_base.y + (p->button_pad * p->button_pad_factor),
+                                button_format_base.width - (p->button_pad * 2),
+                                button_format_base.height - (p->button_pad * 2 * p->button_pad_factor),
                             };
                             if (CheckCollisionPointRec(p->mouse_position, ButtonFormatness)) {
                                 ButtonFormat.isHover = true;
@@ -963,12 +960,11 @@ void UpdateDrawUI() {
                         };
                         DrawRectangleLinesExCustom(export_button_base, 0.5F, WHITE);
 
-                        float pad = 8;
                         Rectangle ButtonExport{
-                            export_button_base.x + (pad * 1),
-                            export_button_base.y + (pad * 1.5F),
-                            export_button_base.width - (pad * 2),
-                            export_button_base.height - (pad * 2 * 1.5F),
+                            export_button_base.x + (p->button_pad * 1),
+                            export_button_base.y + (p->button_pad * p->button_pad_factor),
+                            export_button_base.width - (p->button_pad * 2),
+                            export_button_base.height - (p->button_pad * 2 * p->button_pad_factor),
                         };
 
                         if (CheckCollisionPointRec(p->mouse_position, ButtonExport)) {
