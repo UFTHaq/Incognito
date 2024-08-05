@@ -275,8 +275,9 @@ enum TextAlign {
 };
 
 enum NotificationSentiment {
-    FAILED,
-    SUCCESS
+    SUCCESS,
+    WARNING_TITLE_EMPTY,
+    WARNING_ONLY_PNG,
 };
 
 
@@ -454,7 +455,8 @@ void UpdateDrawUI() {
                 const char* c_file_path = dropped_file.paths[0];
                 std::string cpp_file_path = std::string(c_file_path);
 
-                if (IsFileExtension(c_file_path, ".png") || IsFileExtension(c_file_path, ".jpg")) // I dont know why jpg doesnt work.
+                //if (IsFileExtension(c_file_path, ".png") || IsFileExtension(c_file_path, ".jpg")) // I dont know why jpg doesnt work.
+                if (IsFileExtension(c_file_path, ".png"))
                 {
                     p->image_input = LoadImage(c_file_path);
                     ImageSize imageOldSize = { (float)p->image_input.width, (float)p->image_input.height };
@@ -515,6 +517,10 @@ void UpdateDrawUI() {
                         base_factor_ratio = p->flexible_panel_input.height / p->flexible_panel_input.width;
                         std::cout << "image factor ratio: " << base_factor_ratio << std::endl;
                     }
+                }
+                else {
+                    p->notificationON = true;
+                    p->notificationLevel = WARNING_ONLY_PNG;
                 }
                 p->reload_setup = true;
 
@@ -898,14 +904,6 @@ void UpdateDrawUI() {
 
                         InputTextBox(input_text_place);
 
-                        //// CONTOH SEMENTARA
-                        //{
-                        //    std::string text = "Author_UFTHaq";
-                        //    DrawTextMine(input_text_place, text, LEFT, 0.8F, BLACK);
-                        //    p->input_title = text;
-                        //}
-
-
                     }
                     else if (i == 1)
                     {
@@ -989,7 +987,7 @@ void UpdateDrawUI() {
                                     p->notificationLevel = SUCCESS;
                                 }
                                 else {
-                                    p->notificationLevel = FAILED;
+                                    p->notificationLevel = WARNING_TITLE_EMPTY;
                                 }
                             }
                         }
@@ -1021,7 +1019,11 @@ void UpdateDrawUI() {
                 text = "SUCCESS EXPORT TO " + p->outputTitle;
                 DrawTextMine(PanelFooter, text, LEFT, 0.6F, WHITE, DARKGREEN);
             }
-            else {
+            else if (p->notificationLevel == WARNING_ONLY_PNG) {
+                text = "SORRY COULDN'T LOAD IMAGE, ONLY SUPPORT PNG FORMAT";
+                DrawTextMine(PanelFooter, text, LEFT, 0.6F, WHITE, RED);
+            }
+            else if (p->notificationLevel == WARNING_TITLE_EMPTY) {
                 text = "PLEASE FILL EXPORT TITLE";
                 DrawTextMine(PanelFooter, text, LEFT, 0.6F, WHITE, RED);
             }
