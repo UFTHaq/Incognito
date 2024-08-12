@@ -22,7 +22,7 @@ https://github.com/user-attachments/assets/b590e59c-df37-4a22-b07a-773628c8b7fb
 
 https://www.youtube.com/watch?v=2cm3MWPysow
 
-### Feature:
+### Features:
 - Drag&Drop png image.
 - Setup padding.
 - Title input.
