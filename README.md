@@ -1,5 +1,5 @@
 # Incognito : Image to Audio Converter
-Convert your image to sound
+Convert your image to audio
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/09ef1ec2-6484-4f33-91fb-1071425a74c5" width=180/>
