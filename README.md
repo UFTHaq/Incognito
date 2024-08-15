@@ -34,7 +34,7 @@ https://www.youtube.com/watch?v=2cm3MWPysow
 ### Build with:
 - C++17 in MSVC Visual Studio C++ 2022
 
-### Dependencies:
+### Libraries:
 - Raylib : [https://www.raylib.com/](https://www.raylib.com/)
 - FFTW3 : [https://www.fftw.org/](https://www.fftw.org/)
 - Libsndfile : [https://libsndfile.github.io/libsndfile/](https://libsndfile.github.io/libsndfile/)
