@@ -44,6 +44,11 @@ https://www.youtube.com/watch?v=2cm3MWPysow
  Incognito-v1.0.0-win64
   </a>
 
+### Known Issues / Bugs:
+- The app conversion process only works once per startup.
+- The window startup is broken when using 2 monitors in extended mode,
+- at least in my setup (laptop + second monitor). This could be a Raylib or Windows issue.
+
 <br></br>
 
 <p align="center">
