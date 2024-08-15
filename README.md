@@ -22,6 +22,9 @@ https://github.com/user-attachments/assets/b590e59c-df37-4a22-b07a-773628c8b7fb
 
 https://www.youtube.com/watch?v=2cm3MWPysow
 
+### Skill Issue:
+- I dont know any build system yet, so sorry for dev.
+
 ### Features:
 - Drag&Drop png image.
 - Setup padding.
@@ -35,6 +38,11 @@ https://www.youtube.com/watch?v=2cm3MWPysow
 - Raylib : [https://www.raylib.com/](https://www.raylib.com/)
 - FFTW3 : [https://www.fftw.org/](https://www.fftw.org/)
 - Libsndfile : [https://libsndfile.github.io/libsndfile/](https://libsndfile.github.io/libsndfile/)
+
+### Download:
+- Windows-x64 : <a href="https://github.com/UFTHaq/Incognito/releases/download/v.1.0.0/Incognito-v1.0.0-win64.zip">
+ Incognito-v1.0.0-win64
+  </a>
 
 <br></br>
 
