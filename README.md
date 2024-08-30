@@ -47,9 +47,7 @@ https://www.youtube.com/watch?v=2cm3MWPysow
   </a>
 
 ### Known Issues / Bugs:
-- The app conversion process only works once per startup.
-- The window startup is broken when using 2 monitors in extended mode,
-- at least in my setup (laptop + second monitor). This could be a Raylib or Windows issue.
+- The window startup is broken when using 2 monitors in extended mode, at least in my setup (laptop ryzen5 Win11 + second monitor). This could be a Raylib or Windows issue. Quick fix is by changing extended mode monitor to PC screen of Second screen only, open This App, and then its okay to cameback to Extended mode.
 
 <br></br>
 
