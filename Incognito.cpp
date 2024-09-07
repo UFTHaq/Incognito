@@ -37,6 +37,7 @@ bool IsCapsLockActive() {
 #define ICON_CHECK_LOCK                         {"resources/Icons/Check.png"}
 
 #define VERYDARKGRAY                            {50, 50, 50, 255}
+#define WIDTH_FACTOR                            1.1F
 
 void UpdateDrawUI();
 
@@ -283,7 +284,9 @@ enum NotificationSentiment {
 };
 
 
-int main() {
+//int main() 
+int WinMain() 
+{
 
     screen = { 850, 750 };
 
@@ -423,19 +426,6 @@ void UpdateDrawUI() {
                 rect_l.height - name_space
             };
             DrawRectangleLinesEx(panel_input_image_base, 0.5F, WHITE);
-            static float base_factor_ratio{};
-            static bool print_once{ false };
-            if (!print_once) {
-                if (panel_input_image_base.width > panel_input_image_base.height) {
-                    base_factor_ratio = panel_input_image_base.width / panel_input_image_base.height;
-                    std::cout << "factor ratio: " << base_factor_ratio << std::endl;
-                }
-                else {
-                    base_factor_ratio = panel_input_image_base.height / panel_input_image_base.width;
-                    std::cout << "factor ratio: " << base_factor_ratio << std::endl;
-                }
-                print_once = true;
-            }
 
             Rectangle panel_input_image_name{
                 panel_input_image_base.x,
@@ -458,6 +448,20 @@ void UpdateDrawUI() {
                 std::string cpp_file_path = std::string(c_file_path);
 
                 //if (IsFileExtension(c_file_path, ".png") || IsFileExtension(c_file_path, ".jpg")) // I dont know why jpg doesnt work.
+                static float base_factor_ratio{};
+                static bool print_once{ false };
+                if (!print_once) {
+                    if (panel_input_image_base.width > panel_input_image_base.height) {
+                        base_factor_ratio = panel_input_image_base.width / panel_input_image_base.height;
+                        std::cout << "factor ratio: " << base_factor_ratio << std::endl;
+                    }
+                    else {
+                        base_factor_ratio = panel_input_image_base.height / panel_input_image_base.width;
+                        std::cout << "factor ratio: " << base_factor_ratio << std::endl;
+                    }
+                    print_once = true;
+                }
+
                 if (IsFileExtension(c_file_path, ".png"))
                 {
                     p->image_input = LoadImage(c_file_path);
@@ -465,7 +469,7 @@ void UpdateDrawUI() {
                     std::cout << "image height: " << imageOldSize.height << ", width: " << imageOldSize.width << std::endl;
 
                     uint16_t new_height = 480;
-                    uint16_t new_width = int((float(new_height) / imageOldSize.height) * imageOldSize.width * 1.1F);
+                    uint16_t new_width = int((float(new_height) / imageOldSize.height) * imageOldSize.width * WIDTH_FACTOR);
                     std::cout << "image height: " << new_height << ", width: " << new_width << std::endl;
                     ImageSize imageNewSize = { (float)new_width, (float)new_height };
                     p->flexible_ratio = imageNewSize;
