@@ -49,7 +49,7 @@ https://www.youtube.com/watch?v=2cm3MWPysow
 ### Known Issues / Bugs:
 - <b>Window startup issue:</b> The window startup is broken when using 2 monitors in extended mode, at least in my setup (laptop ryzen5 Win11 and second monitor). This could be a compatibility issue with Raylib, Windows, or AMD drivers.
   - <b>Workaround:</b> Quick fix is by changing extended mode monitor to (PC screen or Second screen only), open This App, and then its okay to cameback to Extended mode.
-- <b>Image conversion limitation:</b> The app has a limitation of converting only one image to audio per session. To convert another image, you will need to exit and restart the app. I am unable to determine what cause this issue :( .
+- <b>Image conversion limitation:</b> The app has a limitation of converting only one image to audio per session. To convert another image, you will need to exit and restart the app. I am unable to determine what cause this issue.
 
 <br></br>
 
