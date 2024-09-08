@@ -144,8 +144,8 @@ struct SliderInput {
             area.height
         };
 
-        float pad = 4;
-        float topPadding = 2.5F;
+        float pad = 4.5F;
+        float topPadding = 2.15F;
 
         sliderBarRect = {
             sliderBarRect.x + (pad * 5),
@@ -160,26 +160,28 @@ struct SliderInput {
         float fontSize = 0.8F;
 
         float handleX = sliderBarRect.x + ((value - minValue) / (maxValue - minValue)) * sliderBarRect.width;
-        float handleW = 30;
+        float handleW = 38;
         const Color color{ 79, 100, 166, 255 };
 
+        float topMargin = 12;
         Rectangle SliderBarRectWithPad{
             sliderBarRect.x - (handleW * 0.5F),
-            sliderBarRect.y,
+            sliderBarRect.y + (topMargin * 1),
             sliderBarRect.width + (handleW * 1),
-            sliderBarRect.height
+            sliderBarRect.height - (topMargin * 2)
         };
 
         Rectangle handleRect{
             handleX - (handleW * 0.5F),
-            SliderBarRectWithPad.y,
+            sliderBarRect.y,
             handleW,
-            SliderBarRectWithPad.height
+            sliderBarRect.height
         };
 
-        DrawRectangleRounded(SliderBarRectWithPad, 0.2F, 10, { 25,32,45,255 });
-        DrawRectangleRoundedLines(SliderBarRectWithPad, 0.2F, 10, 0.5F, Fade(WHITE, 0.2F));
-        DrawRectangleRounded(handleRect, 0.2F, 10, color);
+        //DrawRectangleRounded(SliderBarRectWithPad, 0.5F, 10, { 25,32,45,255 });
+        DrawRectangleRounded(SliderBarRectWithPad, 0.5F, 10, { 45,45,50,255 });
+        //DrawRectangleRoundedLines(SliderBarRectWithPad, 0.2F, 10, 0.5F, Fade(WHITE, 0.2F));
+        DrawRectangleRounded(handleRect, 0.3F, 10, color);
         std::string text = std::to_string((int)value);
         DrawTextMine(handleRect, text, 1, fontSize, WHITE, BLANK);
 
@@ -188,7 +190,7 @@ struct SliderInput {
     void Update() {
         Vector2 mousePos = GetMousePosition();
 
-        if (CheckCollisionPointRec(mousePos, sliderBarRect) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        if (CheckCollisionPointRec(mousePos, area) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             dragging = true;
         }
 
@@ -202,7 +204,7 @@ struct SliderInput {
             }
         }
 
-        if (CheckCollisionPointRec(mousePos, sliderBarRect)) {
+        if (CheckCollisionPointRec(mousePos, area)) {
             float mouseWheelStep = 1;
             float wheelDelta = GetMouseWheelMove();
             value += wheelDelta * mouseWheelStep;
@@ -806,7 +808,7 @@ void UpdateDrawUI() {
 
                                 if (newVal != OldVal) {
                                     p->reload_setup = true;
-                                    p->change_Image = true;
+                                    //p->change_Image = true;
                                     p->pad_thick = newVal;
                                     OldVal = newVal;
                                 }
@@ -899,6 +901,87 @@ void UpdateDrawUI() {
                                 };
                                 DrawRectangleLinesExCustom(SliderColorBase, 0.5F, WHITE);
 
+                                Rectangle SliderColor{
+                                    (int)(SliderColorBase.x + (p->button_pad * 1)),
+                                    (int)(SliderColorBase.y + (p->button_pad * p->button_pad_factor)),
+                                    (int)(SliderColorBase.width - (p->button_pad * 2)),
+                                    (int)(SliderColorBase.height - (p->button_pad * 2 * p->button_pad_factor)),
+                                };
+
+                                Color UFTHaqWHITE{ 220,220,220,255 };
+                                static Image SliderGrayscaleImage = GenImageGradientLinear((int)SliderColor.width, (int)SliderColor.height, 90, BLACK, UFTHaqWHITE);
+                                static Texture SliderGrayscaleTexture = LoadTextureFromImage(SliderGrayscaleImage);
+
+                                // SLIDER MECHANICS
+                                Color handleLocColor = p->pad_color;
+                                float value = handleLocColor.r;
+
+                                float minValue = BLACK.r;
+                                float maxValue = UFTHaqWHITE.r;
+
+                                float handleX = SliderColor.x + ((value - minValue) / (maxValue - minValue)) * SliderColor.width;
+                                float handleW = 2;
+
+                                Rectangle handlePointer{
+                                    handleX - (handleW * 0.5F),
+                                    SliderColor.y,
+                                    handleW,
+                                    SliderColor.height
+                                };
+
+                                Vector2 mousePos = GetMousePosition();
+
+                                static bool dragging = false;
+                                if (CheckCollisionPointRec(mousePos, SliderColor) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                                    dragging = true;
+                                }
+
+                                if (dragging) {
+                                    if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+                                        dragging = false;
+                                    }
+                                    else {
+                                        float normalizedValue = (mousePos.x - SliderColor.x) / SliderColor.width;
+                                        value = minValue + normalizedValue * (maxValue - minValue);
+                                    }
+                                }
+
+                                if (CheckCollisionPointRec(mousePos, SliderColor)) {
+                                    float mouseWheelStep = 5;
+                                    float wheelDelta = GetMouseWheelMove();
+                                    value += wheelDelta * mouseWheelStep;
+                                }
+
+                                if (value < minValue) value = minValue;
+                                if (value > maxValue) value = maxValue;
+
+                                {
+                                    // RELOAD UPDATE
+                                    int newVal = (int)value;
+                                    static int oldVal = newVal;
+
+                                    if (newVal != oldVal) {
+                                        p->reload_setup = true;
+                                        oldVal = newVal;
+                                    }
+                                }
+
+                                uint8_t valueCol = (int)value;
+                                p->pad_color = { valueCol, valueCol, valueCol, 255 };
+
+                                float luminance = 0.2126f * p->pad_color.r + 0.7152f * p->pad_color.g + 0.0722f * p->pad_color.b;
+
+                                Color handlePointerColor = (luminance > 150) ? BLACK : WHITE;
+
+                                {
+                                    Rectangle source{
+                                        0,0,(float)SliderGrayscaleImage.width, (float)SliderGrayscaleImage.height
+                                    };
+                                    Rectangle dest{ SliderColor };
+                                    DrawTexturePro(SliderGrayscaleTexture, source, dest, { 0,0 }, 0, WHITE);
+                                    DrawRectangleRoundedLines(SliderColor, 0.1F, 10, .5F, WHITE);
+                                    DrawRectangleRounded(handlePointer, 0.1, 10, handlePointerColor);
+                                }
 
                             }
                             // AUTO COLOR BUTTON
@@ -920,10 +1003,11 @@ void UpdateDrawUI() {
 
                                 static bool isHover = false;
                                 //Color color = { 52, 148,65, 255 };
-                                Color color = { 45, 48, 50, 255 };
+                                //Color color = { 45, 48, 50, 255 };
+                                Color color{ 79, 100, 166, 255 };
                                 if (CheckCollisionPointRec(p->mousePosition, AutoColorButton)) {
                                     isHover = true;
-                                    color = Fade(color, 1.0F);
+                                    color = { 79, 100, 166, 255 };
 
                                     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
                                         p->pad_color = p->darkest_color_of_image;
@@ -931,7 +1015,7 @@ void UpdateDrawUI() {
                                 }
                                 else {
                                     isHover = false;
-                                    color = Fade(color, 0.6F);
+                                    color = { 45, 48, 50, 255 };
                                 }
 
                                 DrawRectangleRounded(AutoColorButton, 0.2F, 10, color);
@@ -1369,7 +1453,6 @@ void LoadSetup(int new_width, int new_height)
 
             Image copyImage = ImageCopy(copyResize);
             ImageFormat(&copyImage, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
-            ImageFormat(&copyImage, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
 
             Color* ptrPixelsGray = LoadImageColors(copyImage);
             Color darkest{ WHITE };
@@ -1389,10 +1472,10 @@ void LoadSetup(int new_width, int new_height)
             pad_color = p->darkest_color_of_image;
             p->pad_color = pad_color;
 
-            UnloadImageColors(ptrPixelsGray);
-            UnloadImage(copyImage);
-
             p->change_Image = false;
+
+            UnloadImage(copyImage);
+            UnloadImageColors(ptrPixelsGray);
         }
         else
         {
@@ -1400,11 +1483,7 @@ void LoadSetup(int new_width, int new_height)
         }
 
         Image image_process = ImageCopy(copyResize);
-        UnloadImage(copyResize);
-
         Color* ptrPixels = LoadImageColors(image_process);
-        UnloadImage(image_process);
-
         std::vector<Color> color_data_input{};
 
         if (p->pad_place == TOP_BOTTOM)
@@ -1436,7 +1515,7 @@ void LoadSetup(int new_width, int new_height)
             }
         }
 
-        Image image_processed = {
+        Image image_processed ={
             color_data_input.data(),
             new_width,
             new_height,
@@ -1444,15 +1523,20 @@ void LoadSetup(int new_width, int new_height)
             PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
         };
 
-        UnloadTexture(p->textureInput);
+        if (p->textureInput.height != 0) UnloadTexture(p->textureInput);
         p->textureInput = LoadTextureFromImage(image_processed);
         p->imageOutput = ImageCopy(image_processed);
 
+        color_data_input.clear();
+        UnloadImage(copyResize);
+        UnloadImage(image_process);
         UnloadImageColors(ptrPixels);
         
     }
+
     ImageFormat(&p->imageOutput, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
-    UnloadTexture(p->textureOutput);
+
+    if (p->textureOutput.height != 0) UnloadTexture(p->textureOutput);
     p->textureOutput = LoadTextureFromImage(p->imageOutput);
 }
 
