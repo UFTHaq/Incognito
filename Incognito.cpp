@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
+#include <string>
 
 #include <raylib.h>
 #include <fftw3.h>
@@ -121,6 +122,103 @@ struct ButtonPadColor {
         if (isChosen) return Fade(BLUE, 1.0F);
         else if (isHover) return Fade(BLUE, 0.3F);
         else return Fade(BLACK, 0.0F);
+    }
+};
+
+struct SliderInput {
+    Rectangle area{};
+    float value{};
+    float minValue{};
+    float maxValue{};
+    bool dragging{};
+
+    Rectangle sliderBarRect{};
+
+    SliderInput(Rectangle area, float minValue, float initialValue, float maxValue, bool dragging) :
+        area(area), minValue(minValue), value(initialValue), maxValue(maxValue), dragging(dragging) 
+    {
+        sliderBarRect = {
+            area.x,
+            area.y,
+            area.width,
+            area.height
+        };
+
+        float pad = 4;
+        float topPadding = 2.5F;
+
+        sliderBarRect = {
+            sliderBarRect.x + (pad * 5),
+            sliderBarRect.y + (pad * topPadding),
+            sliderBarRect.width - (pad * 5 * 2),
+            sliderBarRect.height - (pad * topPadding * 2)
+        };
+
+    };
+    
+    void Draw() {
+        float fontSize = 0.8F;
+
+        float handleX = sliderBarRect.x + ((value - minValue) / (maxValue - minValue)) * sliderBarRect.width;
+        float handleW = 30;
+        const Color color{ 79, 100, 166, 255 };
+
+        Rectangle SliderBarRectWithPad{
+            sliderBarRect.x - (handleW * 0.5F),
+            sliderBarRect.y,
+            sliderBarRect.width + (handleW * 1),
+            sliderBarRect.height
+        };
+
+        Rectangle handleRect{
+            handleX - (handleW * 0.5F),
+            SliderBarRectWithPad.y,
+            handleW,
+            SliderBarRectWithPad.height
+        };
+
+        DrawRectangleRounded(SliderBarRectWithPad, 0.2F, 10, { 25,32,45,255 });
+        DrawRectangleRoundedLines(SliderBarRectWithPad, 0.2F, 10, 0.5F, Fade(WHITE, 0.2F));
+        DrawRectangleRounded(handleRect, 0.2F, 10, color);
+        std::string text = std::to_string((int)value);
+        DrawTextMine(handleRect, text, 1, fontSize, WHITE, BLANK);
+
+    }
+
+    void Update() {
+        Vector2 mousePos = GetMousePosition();
+
+        if (CheckCollisionPointRec(mousePos, sliderBarRect) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            dragging = true;
+        }
+
+        if (dragging) {
+            if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+                dragging = false;
+            }
+            else {
+                float normalizedValue = (mousePos.x - sliderBarRect.x) / sliderBarRect.width;
+                value = minValue + normalizedValue * (maxValue - minValue);
+            }
+        }
+
+        if (CheckCollisionPointRec(mousePos, sliderBarRect)) {
+            float mouseWheelStep = 1;
+            float wheelDelta = GetMouseWheelMove();
+            value += wheelDelta * mouseWheelStep;
+        }
+
+        if (value < minValue) value = minValue;
+        if (value > maxValue) value = maxValue;
+    }
+
+    void Run() {
+        Update();
+        Draw();
+    }
+
+    float GetValue() const {
+        return value;
     }
 };
 
@@ -230,24 +328,26 @@ struct Plug {
     Frame footer = { section2.h, 0.05F };
     float labelSize = 32.5F;
     Color bg_color = { 20,20,20,255 };
-    Vector2 mouse_position{};
-    Image image_input{};
-    Image image_output{};
-    Texture2D texture_input{};
-    Texture2D texture_output{};
+    Vector2 mousePosition{};
+    Image imageInput{};
+    Image imageOutput{};
+    Texture2D textureInput{};
+    Texture2D textureOutput{};
     std::vector<std::string> pad_function{ "THICKNESS", "COLOR", "PLACE" };
-    std::vector<ButtonPadThickness> argument_thickness{ {0,0}, {2, 0}, {4, 1}, {6, 0}, {8,0}, {10,0} };
-    std::vector<ButtonPadColor> argument_color{ {BLACK, 0}, {DARKGRAY, 0}, {GRAY, 1}, {LIGHTGRAY, 0}, {RAYWHITE, 0} };
-    std::vector<ButtonPadPlace> argument_place{ {BOTTOM, "BOTTOM", 1}, {TOP_BOTTOM, "TOP & BOT", 0} };
-    std::vector<std::string> convert_function{ "TITLE", "FORMAT", "" };
+    std::vector<ButtonPadThickness> argumentThickness{ {0,0}, {2, 0}, {4, 1}, {6, 0}, {8,0}, {10,0} };
+    std::vector<ButtonPadColor> argumentColor{ {BLACK, 0}, {DARKGRAY, 0}, {GRAY, 1}, {LIGHTGRAY, 0}, {RAYWHITE, 0} };
+    std::vector<ButtonPadPlace> argumentPlace{ {BOTTOM, "BOTTOM", 1}, {TOP_BOTTOM, "TOP & BOT", 0} };
+    std::vector<std::string> convertFunction{ "TITLE", "FORMAT", "" };
     //std::vector<ButtonAudioFormat> argument_format{ {WAV, SF_FORMAT_PCM_16, "WAV", ".wav", 1}, {FLAC, SF_FORMAT_PCM_16, "FLAC", ".flac", 0}, {OGG, SF_FORMAT_PCM_16, "MP3", ".mp3", 0}, {OGG, SF_FORMAT_VORBIS, "OGG", ".ogg", 0}};
-    std::vector<ButtonAudioFormat> argument_format{ {WAV, SF_FORMAT_PCM_16, "WAV", ".wav", 1}, {FLAC, SF_FORMAT_PCM_16, "FLAC", ".flac", 0} };
+    std::vector<ButtonAudioFormat> argumentFormat{ {WAV, SF_FORMAT_PCM_16, "WAV", ".wav", 1}, {FLAC, SF_FORMAT_PCM_16, "FLAC", ".flac", 0} };
     Texture2D TEX_Check{};
     Rectangle flexible_panel_input{};
     Rectangle flexible_panel_output{};
     ImageSize flexible_ratio{};
+    bool change_Image{};
     int pad_thick{};
     Color pad_color{};
+    Color darkest_color_of_image{};
     int pad_place{};
     float button_pad{ 5 };
     float button_pad_factor{ 2.0F };
@@ -284,8 +384,8 @@ enum NotificationSentiment {
 };
 
 
-//int main() 
-int WinMain() 
+int main() 
+//int WinMain() 
 {
 
     screen = { 850, 750 };
@@ -343,10 +443,11 @@ void InitializedIcons()
     Image check_icon = LoadImage(ICON_CHECK_LOCK);
     p->TEX_Check = LoadTextureFromImage(check_icon);
     SetTextureFilter(p->TEX_Check, TEXTURE_FILTER_BILINEAR);
+    UnloadImage(check_icon);
 }
 
 void UpdateDrawUI() {
-    p->mouse_position = GetMousePosition();
+    p->mousePosition = GetMousePosition();
 
     float pad = 20;
     Rectangle PanelBase{
@@ -464,8 +565,8 @@ void UpdateDrawUI() {
 
                 if (IsFileExtension(c_file_path, ".png"))
                 {
-                    p->image_input = LoadImage(c_file_path);
-                    ImageSize imageOldSize = { (float)p->image_input.width, (float)p->image_input.height };
+                    p->imageInput = LoadImage(c_file_path);
+                    ImageSize imageOldSize = { (float)p->imageInput.width, (float)p->imageInput.height };
                     std::cout << "image height: " << imageOldSize.height << ", width: " << imageOldSize.width << std::endl;
 
                     uint16_t new_height = 480;
@@ -523,6 +624,8 @@ void UpdateDrawUI() {
                         base_factor_ratio = p->flexible_panel_input.height / p->flexible_panel_input.width;
                         std::cout << "image factor ratio: " << base_factor_ratio << std::endl;
                     }
+
+                    p->change_Image = true;
                 }
                 else {
                     p->notificationON = true;
@@ -538,14 +641,14 @@ void UpdateDrawUI() {
                 p->reload_setup = false;
             }
 
-            if (p->texture_input.height != 0) {
+            if (p->textureInput.height != 0) {
                 // Draw input
                 {
                     Rectangle source{
-                        0,0,(float)p->texture_input.width, (float)p->texture_input.height
+                        0,0,(float)p->textureInput.width, (float)p->textureInput.height
                     };
                     Rectangle dest{ p->flexible_panel_input };
-                    DrawTexturePro(p->texture_input, source, dest, { 0,0 }, 0, WHITE);
+                    DrawTexturePro(p->textureInput, source, dest, { 0,0 }, 0, WHITE);
                 }
             }
 
@@ -585,14 +688,14 @@ void UpdateDrawUI() {
                 p->flexible_panel_input.height
             };
 
-            if (p->texture_input.height != 0) {
+            if (p->textureInput.height != 0) {
                 // Draw output
                 {
                     Rectangle source{
-                        0,0,(float)p->texture_output.width, (float)p->texture_output.height
+                        0,0,(float)p->textureOutput.width, (float)p->textureOutput.height
                     };
                     Rectangle dest{ p->flexible_panel_output };
-                    DrawTexturePro(p->texture_output, source, dest, { 0,0 }, 0, WHITE);
+                    DrawTexturePro(p->textureOutput, source, dest, { 0,0 }, 0, WHITE);
                 }
             }
 
@@ -691,100 +794,208 @@ void UpdateDrawUI() {
 
                     if (i == 0)
                     {
-                        size_t button_count = p->argument_thickness.size();
-                        for (size_t j = 0; j < button_count; j++) {
-                            auto& ButtonThick = p->argument_thickness.at(j);
+                        // NEW STYLE
+                        if (1)
+                        {
+                            static SliderInput SliderThick{ argument, 0, 5, 10, false };
+                            SliderThick.Run();
 
-                            Rectangle button_thick_base{
-                                argument.x + (j * argument.width / button_count),
-                                argument.y,
-                                argument.width / button_count,
-                                argument.height
-                            };
-                            DrawRectangleLinesExCustom(button_thick_base, 0.5F, WHITE);
+                            if (CheckCollisionPointRec(p->mousePosition, argument)) {
+                                int newVal = (int)SliderThick.GetValue();
+                                static int OldVal = newVal;
 
-                            Rectangle ButtonThickness{
-                                button_thick_base.x + (p->button_pad * 1),
-                                button_thick_base.y + (p->button_pad * p->button_pad_factor),
-                                button_thick_base.width - (p->button_pad * 2),
-                                button_thick_base.height - (p->button_pad * 2 * p->button_pad_factor),
-                            };
-                            if (CheckCollisionPointRec(p->mouse_position, ButtonThickness)) {
-                                ButtonThick.isHover = true;
-
-                                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-                                    for (auto& button : p->argument_thickness) {
-                                        button.resetChosen();
-                                    }
-                                    ButtonThick.chooseThisButton();
+                                if (newVal != OldVal) {
                                     p->reload_setup = true;
+                                    p->change_Image = true;
+                                    p->pad_thick = newVal;
+                                    OldVal = newVal;
+                                }
+                                else {
+                                    p->reload_setup = false;
                                 }
                             }
-                            else {
-                                ButtonThick.isHover = false;
+                        }
+                        // OLD STYLE
+                        if (0)
+                        {
+                            size_t button_count = p->argumentThickness.size();
+                            for (size_t j = 0; j < button_count; j++) {
+                                auto& ButtonThick = p->argumentThickness.at(j);
+
+                                Rectangle button_thick_base{
+                                    argument.x + (j * argument.width / button_count),
+                                    argument.y,
+                                    argument.width / button_count,
+                                    argument.height
+                                };
+                                DrawRectangleLinesExCustom(button_thick_base, 0.5F, WHITE);
+
+                                Rectangle ButtonThickness{
+                                    button_thick_base.x + (p->button_pad * 1),
+                                    button_thick_base.y + (p->button_pad * p->button_pad_factor),
+                                    button_thick_base.width - (p->button_pad * 2),
+                                    button_thick_base.height - (p->button_pad * 2 * p->button_pad_factor),
+                                };
+                                if (CheckCollisionPointRec(p->mousePosition, ButtonThickness)) {
+                                    ButtonThick.isHover = true;
+
+                                    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                                        for (auto& button : p->argumentThickness) {
+                                            button.resetChosen();
+                                        }
+                                        ButtonThick.chooseThisButton();
+                                        p->reload_setup = true;
+                                        p->change_Image = true;
+                                    }
+                                }
+                                else {
+                                    ButtonThick.isHover = false;
+                                }
+
+                                if (ButtonThick.isChosen) p->pad_thick = ButtonThick.getValue();
+
+                                DrawRectangleRounded(ButtonThickness, 0.3F, 10, ButtonThick.getColorButton());
+                                std::string text = std::to_string(ButtonThick.getValue());
+                                DrawTextMine(ButtonThickness, text, CENTER, 0.9F, ButtonThick.getColorText(), BLANK);
                             }
-
-                            if (ButtonThick.isChosen) p->pad_thick = ButtonThick.getValue();
-
-                            DrawRectangleRounded(ButtonThickness, 0.3F, 10, ButtonThick.getColorButton());
-                            std::string text = std::to_string(ButtonThick.getValue());
-                            DrawTextMine(ButtonThickness, text, CENTER, 0.9F, ButtonThick.getColorText(), BLANK);
                         }
                     }
                     else if (i == 1)
                     {
-                        size_t button_count = p->argument_color.size();
-                        for (size_t k = 0; k < button_count; k++) {
-                            auto& ButtonColor = p->argument_color.at(k);
+                        // NEW STYLE
+                        if (1)
+                        {
+                            size_t button_count = 5;
 
-                            Rectangle button_color_base{
-                                argument.x + (k * argument.width / button_count),
-                                argument.y,
-                                argument.width / button_count,
-                                argument.height
-                            };
-                            DrawRectangleLinesExCustom(button_color_base, 0.5F, WHITE);
-
-                            Rectangle ButtonColorness{
-                                button_color_base.x + (p->button_pad * 1),
-                                button_color_base.y + (p->button_pad * p->button_pad_factor),
-                                button_color_base.width - (p->button_pad * 2),
-                                button_color_base.height - (p->button_pad * 2 * p->button_pad_factor),
-                            };
-                            if (CheckCollisionPointRec(p->mouse_position, ButtonColorness)) {
-                                ButtonColor.isHover = true;
-
-                                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-                                    for (auto& button : p->argument_color) {
-                                        button.resetChosen();
-                                    }
-                                    ButtonColor.chooseThisButton();
-                                    p->reload_setup = true;
-                                }
-                            }
-                            else {
-                                ButtonColor.isHover = false;
-                            }
-
-                            if (ButtonColor.isChosen) p->pad_color = ButtonColor.getColorButton();
-
-                            DrawRectangleRounded(ButtonColorness, 0.2F, 10, ButtonColor.getColorButton());
-                            DrawRectangleRoundedLines(ButtonColorness, 0.2F, 10, 1.0F, WHITE);
+                            // COLOR CHOOSEN VIEW
                             {
-                                // DRAW CHECK ICON
-                                float icon_size = 100.0F;
-                                Rectangle dest = ButtonColorness;
-                                Rectangle source = { 0,0, icon_size, icon_size };
-                                DrawTexturePro(p->TEX_Check, source, dest, { 0,0 }, 0, ButtonColor.getColorIcon());
+                                Rectangle ColorChoosenViewBase{
+                                    argument.x + (0 * argument.width / button_count),
+                                    argument.y,
+                                    argument.width / button_count,
+                                    argument.height
+                                };
+                                DrawRectangleLinesExCustom(ColorChoosenViewBase, 0.5F, WHITE);
+
+                                Rectangle ColorChoosenView{
+                                    ColorChoosenViewBase.x + (p->button_pad * 1),
+                                    ColorChoosenViewBase.y + (p->button_pad * p->button_pad_factor),
+                                    ColorChoosenViewBase.width - (p->button_pad * 2),
+                                    ColorChoosenViewBase.height - (p->button_pad * 2 * p->button_pad_factor),
+                                };
+
+                                Color color = p->pad_color;
+                                DrawRectangleRounded(ColorChoosenView, 0.2F, 10, color);
+                                DrawRectangleRoundedLines(ColorChoosenView, 0.2F, 10, 1.0F, WHITE);
                             }
 
+                            // SLIDER COLOR
+                            {
+                                Rectangle SliderColorBase{
+                                    argument.x + (1 * argument.width / button_count),
+                                    argument.y,
+                                    argument.width / button_count * 2,
+                                    argument.height
+                                };
+                                DrawRectangleLinesExCustom(SliderColorBase, 0.5F, WHITE);
+
+
+                            }
+                            // AUTO COLOR BUTTON
+                            {
+                                Rectangle AutoColorButtonBase{
+                                    argument.x + (3 * argument.width / button_count),
+                                    argument.y,
+                                    argument.width / button_count * 2,
+                                    argument.height
+                                };
+                                DrawRectangleLinesExCustom(AutoColorButtonBase, 0.5F, WHITE);
+
+                                Rectangle AutoColorButton{
+                                    AutoColorButtonBase.x + (p->button_pad * 1),
+                                    AutoColorButtonBase.y + (p->button_pad * p->button_pad_factor),
+                                    AutoColorButtonBase.width - (p->button_pad * 2),
+                                    AutoColorButtonBase.height - (p->button_pad * 2 * p->button_pad_factor),
+                                };
+
+                                static bool isHover = false;
+                                //Color color = { 52, 148,65, 255 };
+                                Color color = { 45, 48, 50, 255 };
+                                if (CheckCollisionPointRec(p->mousePosition, AutoColorButton)) {
+                                    isHover = true;
+                                    color = Fade(color, 1.0F);
+
+                                    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                                        p->pad_color = p->darkest_color_of_image;
+                                    }
+                                }
+                                else {
+                                    isHover = false;
+                                    color = Fade(color, 0.6F);
+                                }
+
+                                DrawRectangleRounded(AutoColorButton, 0.2F, 10, color);
+                                std::string text = "AUTO";
+                                DrawTextMine(AutoColorButton, text, CENTER, 0.7F, WHITE, BLANK);
+                            }
+                        }
+
+                        // OLD STYLE
+                        if (0)
+                        {
+                            size_t button_count = p->argumentColor.size();
+                            for (size_t k = 0; k < button_count; k++) {
+                                auto& ButtonColor = p->argumentColor.at(k);
+
+                                Rectangle button_color_base{
+                                    argument.x + (k * argument.width / button_count),
+                                    argument.y,
+                                    argument.width / button_count,
+                                    argument.height
+                                };
+                                DrawRectangleLinesExCustom(button_color_base, 0.5F, WHITE);
+
+                                Rectangle ButtonColorness{
+                                    button_color_base.x + (p->button_pad * 1),
+                                    button_color_base.y + (p->button_pad * p->button_pad_factor),
+                                    button_color_base.width - (p->button_pad * 2),
+                                    button_color_base.height - (p->button_pad * 2 * p->button_pad_factor),
+                                };
+                                if (CheckCollisionPointRec(p->mousePosition, ButtonColorness)) {
+                                    ButtonColor.isHover = true;
+
+                                    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                                        for (auto& button : p->argumentColor) {
+                                            button.resetChosen();
+                                        }
+                                        ButtonColor.chooseThisButton();
+                                        p->reload_setup = true;
+                                    }
+                                }
+                                else {
+                                    ButtonColor.isHover = false;
+                                }
+
+                                if (ButtonColor.isChosen) p->pad_color = ButtonColor.getColorButton();
+
+                                DrawRectangleRounded(ButtonColorness, 0.2F, 10, ButtonColor.getColorButton());
+                                DrawRectangleRoundedLines(ButtonColorness, 0.2F, 10, 1.0F, WHITE);
+                                {
+                                    // DRAW CHECK ICON
+                                    float icon_size = 100.0F;
+                                    Rectangle dest = ButtonColorness;
+                                    Rectangle source = { 0,0, icon_size, icon_size };
+                                    DrawTexturePro(p->TEX_Check, source, dest, { 0,0 }, 0, ButtonColor.getColorIcon());
+                                }
+
+                            }
                         }
                     }
                     else if (i == 2)
                     {
-                        size_t button_count = p->argument_place.size();
+                        size_t button_count = p->argumentPlace.size();
                         for (size_t l = 0; l < button_count; l++) {
-                            auto& ButtonPlace = p->argument_place.at(l);
+                            auto& ButtonPlace = p->argumentPlace.at(l);
 
                             Rectangle button_place_base{
                                 argument.x + (l * argument.width / button_count),
@@ -800,11 +1011,11 @@ void UpdateDrawUI() {
                                 button_place_base.width - (p->button_pad * 2),
                                 button_place_base.height - (p->button_pad * 2 * p->button_pad_factor),
                             };
-                            if (CheckCollisionPointRec(p->mouse_position, ButtonPlacement)) {
+                            if (CheckCollisionPointRec(p->mousePosition, ButtonPlacement)) {
                                 ButtonPlace.isHover = true;
 
                                 if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-                                    for (auto& button : p->argument_place) {
+                                    for (auto& button : p->argumentPlace) {
                                         button.resetChosen();
                                     }
                                     ButtonPlace.chooseThisButton();
@@ -873,7 +1084,7 @@ void UpdateDrawUI() {
                 DrawRectangleLinesExCustom(rect_r, 0.5F, WHITE);
 
                 // CONVERT FUNCTION
-                size_t count = p->convert_function.size();
+                size_t count = p->convertFunction.size();
                 for (size_t i = 0; i < count; i++) {
                     Rectangle parameter{
                         rect_l.x,
@@ -883,7 +1094,7 @@ void UpdateDrawUI() {
                     };
                     DrawRectangleLinesExCustom(parameter, 0.5F, WHITE);
 
-                    std::string text = p->convert_function.at(i);
+                    std::string text = p->convertFunction.at(i);
                     DrawTextMine(parameter, text, LEFT, 0.4F, WHITE, BLANK);
 
                     Rectangle argument{
@@ -909,9 +1120,9 @@ void UpdateDrawUI() {
                     }
                     else if (i == 1)
                     {
-                        size_t button_count = p->argument_format.size();
+                        size_t button_count = p->argumentFormat.size();
                         for (size_t j = 0; j < button_count; j++) {
-                            auto& ButtonFormat = p->argument_format.at(j);
+                            auto& ButtonFormat = p->argumentFormat.at(j);
 
                             Rectangle button_format_base{
                                 argument.x + (j * argument.width / button_count),
@@ -927,11 +1138,11 @@ void UpdateDrawUI() {
                                 button_format_base.width - (p->button_pad * 2),
                                 button_format_base.height - (p->button_pad * 2 * p->button_pad_factor),
                             };
-                            if (CheckCollisionPointRec(p->mouse_position, ButtonFormatness)) {
+                            if (CheckCollisionPointRec(p->mousePosition, ButtonFormatness)) {
                                 ButtonFormat.isHover = true;
 
                                 if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-                                    for (auto& button : p->argument_format) {
+                                    for (auto& button : p->argumentFormat) {
                                         button.resetChosen();
                                     }
                                     ButtonFormat.chooseThisButton();
@@ -971,7 +1182,7 @@ void UpdateDrawUI() {
                             export_button_base.height - (p->button_pad * 2 * p->button_pad_factor),
                         };
 
-                        if (CheckCollisionPointRec(p->mouse_position, ButtonExport)) {
+                        if (CheckCollisionPointRec(p->mousePosition, ButtonExport)) {
                             isHover = true;
                             color = Fade(color, 1.0F);
 
@@ -980,9 +1191,9 @@ void UpdateDrawUI() {
                                 p->notificationON = true;
 
                                 if (!p->input_title.empty()) {
-                                    ImageFlipVertical(&p->image_output);
-                                    ImageToAudio(p->image_output, p->outputTitle, p->audioFormat, p->audioEncoder);
-                                    ImageFlipVertical(&p->image_output);
+                                    ImageFlipVertical(&p->imageOutput);
+                                    ImageToAudio(p->imageOutput, p->outputTitle, p->audioFormat, p->audioEncoder);
+                                    ImageFlipVertical(&p->imageOutput);
                                     std::cout << "Title  : " << p->outputTitle << std::endl;
                                     p->notificationLevel = SUCCESS;
                                 }
@@ -1038,8 +1249,8 @@ void UpdateDrawUI() {
 
 
     if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S)) {
-        ImageFlipVertical(&p->image_output);
-        ExportImage(p->image_output, "output.png");
+        ImageFlipVertical(&p->imageOutput);
+        ExportImage(p->imageOutput, "output.png");
         //ImageToSound(p->image_output, "output.wav", WAV);
     }
 
@@ -1052,7 +1263,7 @@ void InputTextBox(Rectangle& input_text_place)
     static int framesCounter = 0;
     int maxInputChars = 20;
 
-    if (CheckCollisionPointRec(p->mouse_position, input_text_place)) {
+    if (CheckCollisionPointRec(p->mousePosition, input_text_place)) {
         SetMouseCursor(MOUSE_CURSOR_IBEAM);
         if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
             inputBoxActive = true;
@@ -1061,7 +1272,7 @@ void InputTextBox(Rectangle& input_text_place)
     }
     else { SetMouseCursor(MOUSE_CURSOR_DEFAULT); }
 
-    if (!CheckCollisionPointRec(p->mouse_position, input_text_place)) {
+    if (!CheckCollisionPointRec(p->mousePosition, input_text_place)) {
         if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
             inputBoxActive = false;
         }
@@ -1148,16 +1359,53 @@ void LoadSetup(int new_width, int new_height)
         if (p->pad_place == BOTTOM) pad_replace = pad;
         else pad_replace = pad * 2;
 
-        ImageResize(&p->image_input, (new_width), new_height - pad_replace);
-        p->texture_input = LoadTextureFromImage(p->image_input);
+        Image copyResize = ImageCopy(p->imageInput);
+        ImageResize(&copyResize, (new_width), new_height - pad_replace);
 
-        Image image_process = ImageCopy(p->image_input);
+        Color pad_color{};
 
-        Color* pixels = LoadImageColors(image_process);
+        if (p->change_Image)
+        {
+
+            Image copyImage = ImageCopy(copyResize);
+            ImageFormat(&copyImage, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
+            ImageFormat(&copyImage, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+
+            Color* ptrPixelsGray = LoadImageColors(copyImage);
+            Color darkest{ WHITE };
+            for (size_t i = 0; i < copyImage.width * copyImage.height; i++) {
+                if (ptrPixelsGray[i].r < darkest.r) {
+                    darkest = ptrPixelsGray[i];
+                }
+            }
+
+            unsigned char diff = 20;
+            darkest.r += diff;
+            darkest.g += diff;
+            darkest.b += diff;
+
+            p->darkest_color_of_image = darkest;
+
+            pad_color = p->darkest_color_of_image;
+            p->pad_color = pad_color;
+
+            UnloadImageColors(ptrPixelsGray);
+            UnloadImage(copyImage);
+
+            p->change_Image = false;
+        }
+        else
+        {
+            pad_color = p->pad_color;
+        }
+
+        Image image_process = ImageCopy(copyResize);
+        UnloadImage(copyResize);
+
+        Color* ptrPixels = LoadImageColors(image_process);
+        UnloadImage(image_process);
 
         std::vector<Color> color_data_input{};
-
-        Color pad_color = p->pad_color;
 
         if (p->pad_place == TOP_BOTTOM)
         { // if pad top & bottom
@@ -1167,7 +1415,7 @@ void LoadSetup(int new_width, int new_height)
             }
 
             for (size_t i = 0; i < (new_height_bordered - pad) * new_width; ++i) {
-                color_data_input.push_back(pixels[i]);
+                color_data_input.push_back(ptrPixels[i]);
             }
 
             // PAD BAWAH
@@ -1179,7 +1427,7 @@ void LoadSetup(int new_width, int new_height)
         if (p->pad_place == BOTTOM)
         { // pad bottom only
             for (size_t i = 0; i < (new_height_bordered)*new_width; ++i) {
-                color_data_input.push_back(pixels[i]);
+                color_data_input.push_back(ptrPixels[i]);
             }
 
             // PAD BAWAH
@@ -1187,7 +1435,6 @@ void LoadSetup(int new_width, int new_height)
                 color_data_input.emplace_back(pad_color);
             }
         }
-
 
         Image image_processed = {
             color_data_input.data(),
@@ -1197,13 +1444,16 @@ void LoadSetup(int new_width, int new_height)
             PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
         };
 
+        UnloadTexture(p->textureInput);
+        p->textureInput = LoadTextureFromImage(image_processed);
+        p->imageOutput = ImageCopy(image_processed);
 
-        p->texture_input = LoadTextureFromImage(image_processed);
-        p->image_output = ImageCopy(image_processed);
-
+        UnloadImageColors(ptrPixels);
+        
     }
-    ImageFormat(&p->image_output, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
-    p->texture_output = LoadTextureFromImage(p->image_output);
+    ImageFormat(&p->imageOutput, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
+    UnloadTexture(p->textureOutput);
+    p->textureOutput = LoadTextureFromImage(p->imageOutput);
 }
 
 void DrawTextMine(Rectangle& panel, std::string& text, int align, float size, Color color, Color fillColor)
