@@ -347,7 +347,7 @@ struct Plug {
     Rectangle flexible_panel_output{};
     ImageSize flexible_ratio{};
     bool change_Image{};
-    int pad_thick{};
+    int pad_thick{ 7 };
     Color pad_color{};
     Color darkest_color_of_image{};
     int pad_place{};
@@ -567,6 +567,7 @@ void UpdateDrawUI() {
 
                 if (IsFileExtension(c_file_path, ".png"))
                 {
+                    if (p->imageInput.height != 0) UnloadImage(p->imageInput);
                     p->imageInput = LoadImage(c_file_path);
                     ImageSize imageOldSize = { (float)p->imageInput.width, (float)p->imageInput.height };
                     std::cout << "image height: " << imageOldSize.height << ", width: " << imageOldSize.width << std::endl;
@@ -799,7 +800,8 @@ void UpdateDrawUI() {
                         // NEW STYLE
                         if (1)
                         {
-                            static SliderInput SliderThick{ argument, 0, 5, 10, false };
+                            int initialThick = 7;
+                            static SliderInput SliderThick{ argument, 0, (float)initialThick, 10, false };
                             SliderThick.Run();
 
                             if (CheckCollisionPointRec(p->mousePosition, argument)) {
@@ -1462,7 +1464,7 @@ void LoadSetup(int new_width, int new_height)
                 }
             }
 
-            unsigned char diff = 20;
+            unsigned char diff = 0;
             darkest.r += diff;
             darkest.g += diff;
             darkest.b += diff;
@@ -1515,7 +1517,7 @@ void LoadSetup(int new_width, int new_height)
             }
         }
 
-        Image image_processed ={
+        Image image_processed = {
             color_data_input.data(),
             new_width,
             new_height,
@@ -1525,13 +1527,15 @@ void LoadSetup(int new_width, int new_height)
 
         if (p->textureInput.height != 0) UnloadTexture(p->textureInput);
         p->textureInput = LoadTextureFromImage(image_processed);
+
+        UnloadImage(p->imageOutput);
         p->imageOutput = ImageCopy(image_processed);
 
         color_data_input.clear();
         UnloadImage(copyResize);
         UnloadImage(image_process);
         UnloadImageColors(ptrPixels);
-        
+
     }
 
     ImageFormat(&p->imageOutput, PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
