@@ -398,6 +398,8 @@ int main()
     SetWindowIcon(LoadImage(ICON_INCOGNITO));
     SetTargetFPS(60);
 
+    SetTraceLogLevel(LOG_NONE);
+
     InitializedFonts();
     InitializedIcons();
     OutputFolderTest();
@@ -1591,10 +1593,10 @@ void ImageToAudio(const Image image, const std::string filename, int audioFormat
     int width = image.width;
     int N = (height * 2);
     //int N = height;
-    std::cout << N << std::endl;
+    //std::cout << N << std::endl;
 
     std::vector<double> audio_data{};
-    std::cout << "Original audio size: " << audio_data.size() << std::endl;
+    //std::cout << "Original audio size: " << audio_data.size() << std::endl;
     const float scale = 2.0F / 255.0F;
 
     unsigned char* image_data = (unsigned char*)image.data;
@@ -1630,6 +1632,7 @@ void ImageToAudio(const Image image, const std::string filename, int audioFormat
         fftw_destroy_plan(plan);
         fftw_free(in);
         fftw_free(out);
+        fftw_cleanup();
     }
 
     // Normalize audio data
@@ -1637,21 +1640,21 @@ void ImageToAudio(const Image image, const std::string filename, int audioFormat
     for (auto& sample : audio_data) {
         sample /= max_value;
     }
-    std::cout << "Original audio size: " << audio_data.size() << std::endl;
+    //std::cout << "Original audio size: " << audio_data.size() << std::endl;
 
 
     // Downsampling to make it shorter
     std::vector<double> downsampled_audio_data{};
-    std::cout << "Downsampled audio size: " << downsampled_audio_data.size() << std::endl;
+    //std::cout << "Downsampled audio size: " << downsampled_audio_data.size() << std::endl;
     for (size_t i = 0; i < audio_data.size(); i += 1) {
         downsampled_audio_data.push_back(audio_data.at(i));
     }
-    std::cout << "Downsampled audio size: " << downsampled_audio_data.size() << std::endl;
+    //std::cout << "Downsampled audio size: " << downsampled_audio_data.size() << std::endl;
 
 
     // Debug 
-    std::cout << "size audio_data : " << audio_data.size() << std::endl;
-    std::cout << "size downsampled: " << downsampled_audio_data.size() << std::endl;
+    //std::cout << "size audio_data : " << audio_data.size() << std::endl;
+    //std::cout << "size downsampled: " << downsampled_audio_data.size() << std::endl;
 
 
     {
@@ -1680,15 +1683,15 @@ void ImageToAudio(const Image image, const std::string filename, int audioFormat
             return;
         }
 
-        // Check if the file is empty
-        if (sf_seek(sndfile, 0, SEEK_CUR) == 0) {
-            std::cout << "The file is empty and ready for writing." << std::endl;
-        }
-        else {
-            std::cerr << "Error: The file is not at the start position." << std::endl;
-            sf_close(sndfile);
-            return;
-        }
+        //// Check if the file is empty, for DEBUG
+        //if (sf_seek(sndfile, 0, SEEK_CUR) == 0) {
+        //    std::cout << "The file is empty and ready for writing." << std::endl;
+        //}
+        //else {
+        //    std::cerr << "Error: The file is not at the start position." << std::endl;
+        //    sf_close(sndfile);
+        //    return;
+        //}
 
         // Write interleaved stereo samples
         sf_count_t frames_written = sf_writef_short(sndfile, short_audio_data.data(), short_audio_data.size() / 2);
@@ -1696,26 +1699,26 @@ void ImageToAudio(const Image image, const std::string filename, int audioFormat
             std::cerr << "Error writing sound file: " << sf_strerror(sndfile) << std::endl;
         }
         else {
-            std::cout << "Encoding successful!" << std::endl;
+            std::cout << "INFO: ======== Encoding Successful! ======== " << std::endl;
         }
 
         sf_close(sndfile);
 
         short_audio_data.clear();
         short_audio_data.shrink_to_fit();
-        std::cout << "short_audio_data size: " << short_audio_data.size() << std::endl;
-        if (short_audio_data.size() == 0) TraceLog(LOG_INFO, "DATA CLEAR : short_audio_data");
+        //std::cout << "short_audio_data size: " << short_audio_data.size() << std::endl;
+        //if (short_audio_data.size() == 0) TraceLog(LOG_INFO, "DATA CLEAR : short_audio_data");
     }
 
     audio_data.clear();
     audio_data.shrink_to_fit();
-    std::cout << "audio_data size: " << audio_data.size() << std::endl;
-    if (audio_data.size() == 0) TraceLog(LOG_INFO, "DATA CLEAR : audio_data");
+    //std::cout << "audio_data size: " << audio_data.size() << std::endl;
+    //if (audio_data.size() == 0) TraceLog(LOG_INFO, "DATA CLEAR : audio_data");
 
     downsampled_audio_data.clear();
     downsampled_audio_data.shrink_to_fit();
-    std::cout << "downsampled_audio_data size: " << downsampled_audio_data.size() << std::endl;
-    if (downsampled_audio_data.size() == 0) TraceLog(LOG_INFO, "DATA CLEAR : downsampled_audio_data");
+    //std::cout << "downsampled_audio_data size: " << downsampled_audio_data.size() << std::endl;
+    //if (downsampled_audio_data.size() == 0) TraceLog(LOG_INFO, "DATA CLEAR : downsampled_audio_data");
 }
 
 
