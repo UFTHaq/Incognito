@@ -4,13 +4,6 @@
 // Made   : 27 - 05 - 2024
 //
 
-// ISSUES :
-// 1. Incognito Converter only works for once per life time. 
-//    (the 2nd, 3rd and so forth always end up broken file). I dont know why. 
-//    So after convert, need to close the app and re open it again to do converting again.
-// 
-//
-
 #include <iostream>
 #include <vector>
 #include <cmath>
@@ -24,6 +17,7 @@
 #include <raylib.h>
 #include <fftw3.h>
 #include <sndfile.h>
+#include <SFML/Graphics.hpp>
 
 
 // Declare the GetKeyState function
@@ -52,6 +46,10 @@ void InitializedFonts();
 
 void OutputFolderTest();
 
+
+
+Rectangle FlexibleRectangle(Rectangle& BaseRect, float ObjectWidth, float ObjectHeight);
+
 void DrawTextMine(Rectangle& panel, std::string& text, int align, float size, Color color, Color fillColor);
 
 void DrawRectangleLinesExCustom(Rectangle rec, float lineThick, Color color);
@@ -59,8 +57,8 @@ void DrawRectangleLinesExCustom(Rectangle rec, float lineThick, Color color);
 void ImageToAudio(const Image image, const std::string filename, int audioFormat, int audioEncoder);
 
 struct ImageSize {
-    float width{};
-    float height{};
+    float w{};
+    float h{};
 };
 
 struct Frame {
@@ -358,6 +356,7 @@ struct Plug {
     int audioFormat{};
     int audioEncoder{};
     bool reload_setup{ true };
+    ImageSize flexibleSize{};
     bool notificationON{};
     int notificationLevel{};
 };
@@ -385,6 +384,7 @@ enum NotificationSentiment {
     WARNING_ONLY_PNG,
 };
 
+ImageSize CalculateFlexibleImage();
 
 int main() 
 //int WinMain() 
@@ -393,6 +393,7 @@ int main()
     screen = { 850, 750 };
 
     SetConfigFlags(FLAG_MSAA_4X_HINT);
+    SetConfigFlags(FLAG_VSYNC_HINT);
 
     InitWindow((int)screen.w, (int)screen.h, p->title.c_str());
     SetWindowIcon(LoadImage(ICON_INCOGNITO));
@@ -552,85 +553,37 @@ void UpdateDrawUI() {
                 const char* c_file_path = dropped_file.paths[0];
                 std::string cpp_file_path = std::string(c_file_path);
 
-                //if (IsFileExtension(c_file_path, ".png") || IsFileExtension(c_file_path, ".jpg")) // I dont know why jpg doesnt work.
-                static float base_factor_ratio{};
-                static bool print_once{ false };
-                if (!print_once) {
-                    if (panel_input_image_base.width > panel_input_image_base.height) {
-                        base_factor_ratio = panel_input_image_base.width / panel_input_image_base.height;
-                        std::cout << "factor ratio: " << base_factor_ratio << std::endl;
-                    }
-                    else {
-                        base_factor_ratio = panel_input_image_base.height / panel_input_image_base.width;
-                        std::cout << "factor ratio: " << base_factor_ratio << std::endl;
-                    }
-                    print_once = true;
-                }
-
+                // NEW
                 if (IsFileExtension(c_file_path, ".png"))
                 {
                     if (p->imageInput.height != 0) UnloadImage(p->imageInput);
                     p->imageInput = LoadImage(c_file_path);
-                    ImageSize imageOldSize = { (float)p->imageInput.width, (float)p->imageInput.height };
-                    std::cout << "image height: " << imageOldSize.height << ", width: " << imageOldSize.width << std::endl;
+                    p->flexibleSize = CalculateFlexibleImage();
+                    p->flexible_panel_input = FlexibleRectangle(panel_input_image_base, p->flexibleSize.w, p->flexibleSize.h);
+                    p->change_Image = true;
+                }
+                else if (IsFileExtension(c_file_path, ".jpg") || IsFileExtension(c_file_path, ".jpeg"))
+                {
+                    sf::Image sfmlImage{};
+                    if (sfmlImage.loadFromFile(cpp_file_path)) {
+                        TraceLog(LOG_INFO, "Success load image from SFML");
+                        
+                        {
+                            std::string temporaryImage{ "temporary.png" };
+                            sfmlImage.saveToFile(temporaryImage);
 
-                    uint16_t new_height = 480;
-                    uint16_t new_width = int((float(new_height) / imageOldSize.height) * imageOldSize.width * WIDTH_FACTOR);
-                    std::cout << "image height: " << new_height << ", width: " << new_width << std::endl;
-                    ImageSize imageNewSize = { (float)new_width, (float)new_height };
-                    p->flexible_ratio = imageNewSize;
+                            if (p->imageInput.height != 0) UnloadImage(p->imageInput);
+                            p->imageInput = LoadImage(temporaryImage.c_str());
+                            p->flexibleSize = CalculateFlexibleImage();
+                            p->flexible_panel_input = FlexibleRectangle(panel_input_image_base, p->flexibleSize.w, p->flexibleSize.h);
 
-                    if (imageNewSize.width == imageNewSize.height) {
-                        float h = panel_input_image_base.height;
-                        float w = h;
-                        p->flexible_panel_input = {
-                            panel_input_image_base.x + (panel_input_image_base.width - w) / 2,
-                            panel_input_image_base.y + (panel_input_image_base.height - h) / 2,
-                            w,
-                            h
-                        };
-                        float image_factor_ratio = p->flexible_panel_input.width / p->flexible_panel_input.height;
-                        std::cout << "image factor ratio: " << image_factor_ratio << std::endl;
-                    }
-                    else if (imageNewSize.width > imageNewSize.height) {
-                        float w = panel_input_image_base.width;
-                        float h = imageNewSize.height / imageNewSize.width * panel_input_image_base.width;
-                        p->flexible_panel_input = {
-                            panel_input_image_base.x + (panel_input_image_base.width - w) / 2,
-                            panel_input_image_base.y + (panel_input_image_base.height - h) / 2,
-                            w,
-                            h
-                        };
-                        float image_factor_ratio = p->flexible_panel_input.width / p->flexible_panel_input.height;
-                        std::cout << "image factor ratio: " << image_factor_ratio << std::endl;
-
-                        // For edge case weird ratio;
-                        if (image_factor_ratio < base_factor_ratio) {
-                            float h = panel_input_image_base.height;
-                            float w = imageNewSize.width / imageNewSize.height * panel_input_image_base.height;
-                            p->flexible_panel_input = {
-                                panel_input_image_base.x + (panel_input_image_base.width - w) / 2,
-                                panel_input_image_base.y + (panel_input_image_base.height - h) / 2,
-                                w,
-                                h
-                            };
-                            image_factor_ratio = p->flexible_panel_input.height / p->flexible_panel_input.width;
+                            std::filesystem::remove(temporaryImage);
+                            p->change_Image = true;
                         }
                     }
                     else {
-                        float h = panel_input_image_base.height;
-                        float w = imageNewSize.width / imageNewSize.height * panel_input_image_base.height;
-                        p->flexible_panel_input = {
-                            panel_input_image_base.x + (panel_input_image_base.width - w) / 2,
-                            panel_input_image_base.y + (panel_input_image_base.height - h) / 2,
-                            w,
-                            h
-                        };
-                        base_factor_ratio = p->flexible_panel_input.height / p->flexible_panel_input.width;
-                        std::cout << "image factor ratio: " << base_factor_ratio << std::endl;
+                        TraceLog(LOG_WARNING, "Failed load image from SFML");
                     }
-
-                    p->change_Image = true;
                 }
                 else {
                     p->notificationON = true;
@@ -642,7 +595,7 @@ void UpdateDrawUI() {
             }
 
             if (p->reload_setup) {
-                LoadSetup((int)p->flexible_ratio.width, (int)p->flexible_ratio.height);
+                LoadSetup((int)p->flexibleSize.w, (int)p->flexibleSize.h);
                 p->reload_setup = false;
             }
 
@@ -686,12 +639,14 @@ void UpdateDrawUI() {
                 DrawTextMine(panel_input_image_name, text, CENTER, 0.9F, WHITE, BLANK);
             }
 
+            //p->flexible_panel_output = FlexibleRectangle(panel_input_image_base, p->flexible_panel_input.width, p->flexible_panel_input.height);
             p->flexible_panel_output = {
                 panel_input_image_base.x + (panel_input_image_base.width - p->flexible_panel_input.width) / 2,
                 p->flexible_panel_input.y,
                 p->flexible_panel_input.width,
                 p->flexible_panel_input.height
             };
+
 
             if (p->textureInput.height != 0) {
                 // Draw output
@@ -1282,7 +1237,7 @@ void UpdateDrawUI() {
                                     ImageFlipVertical(&p->imageOutput);
                                     ImageToAudio(p->imageOutput, p->outputTitle, p->audioFormat, p->audioEncoder);
                                     ImageFlipVertical(&p->imageOutput);
-                                    std::cout << "Title  : " << p->outputTitle << std::endl;
+                                    std::cout << "Export Title: " << p->outputTitle << std::endl;
                                     p->notificationLevel = SUCCESS;
                                 }
                                 else {
@@ -1546,6 +1501,100 @@ void LoadSetup(int new_width, int new_height)
     p->textureOutput = LoadTextureFromImage(p->imageOutput);
 }
 
+ImageSize CalculateFlexibleImage()
+{
+    ImageSize imageOldSize = { (float)p->imageInput.width, (float)p->imageInput.height };
+
+    uint16_t new_height = 480;
+    uint16_t new_width = int((float(new_height) / imageOldSize.h) * imageOldSize.w * WIDTH_FACTOR);
+    ImageSize imageNewSize = { (float)new_width, (float)new_height };
+
+    return imageNewSize;
+}
+
+Rectangle FlexibleRectangle(Rectangle& BaseRect, float ObjectWidth, float ObjectHeight)
+{
+    ImageSize imageOldSize = { (float)p->imageInput.width, (float)p->imageInput.height };
+    //std::cout << "image height: " << imageOldSize.h << ", width: " << imageOldSize.w << std::endl;
+
+    Rectangle flexibleRect{};
+    float baseRatio{ BaseRect.width / BaseRect.height };
+    float objectRatio{ ObjectWidth / ObjectHeight };
+
+    if (ObjectWidth == ObjectHeight) {
+        if (BaseRect.height < BaseRect.width) {
+            float h = BaseRect.height;
+            float w = h;
+            flexibleRect = {
+                BaseRect.x + (BaseRect.width - w) / 2,
+                BaseRect.y + (BaseRect.height - w) / 2,
+                w,
+                h
+            };
+        }
+        else {
+            float w = BaseRect.width;
+            float h = w;
+            flexibleRect = {
+                BaseRect.x + (BaseRect.width - w) / 2,
+                BaseRect.y + (BaseRect.height - w) / 2,
+                w,
+                h
+            };
+        }
+
+    }
+    else if (ObjectWidth > ObjectHeight) {
+
+        float w = BaseRect.width;
+        float h = ObjectHeight / ObjectWidth * BaseRect.width;
+        flexibleRect = {
+            BaseRect.x + (BaseRect.width - w) / 2,
+            BaseRect.y + (BaseRect.height - h) / 2,
+            w,
+            h
+        };
+        objectRatio = flexibleRect.width / flexibleRect.height;
+
+        if (objectRatio < baseRatio) {
+            float h = BaseRect.height;
+            float w = ObjectWidth / ObjectHeight * BaseRect.height;
+            flexibleRect = {
+                BaseRect.x + (BaseRect.width - w) / 2,
+                BaseRect.y + (BaseRect.height - h) / 2,
+                w,
+                h
+            };
+        }
+
+    }
+    else {
+        float h = BaseRect.height;
+        float w = ObjectWidth / ObjectHeight * BaseRect.height;
+        flexibleRect = {
+            BaseRect.x + (BaseRect.width - w) / 2,
+            BaseRect.y + (BaseRect.height - h) / 2,
+            w,
+            h
+        };
+        objectRatio = flexibleRect.width / flexibleRect.height;
+
+        if (objectRatio > baseRatio) {
+            float w = BaseRect.width;
+            float h = ObjectHeight / ObjectWidth * BaseRect.width;
+            flexibleRect = {
+                BaseRect.x + (BaseRect.width - w) / 2,
+                BaseRect.y + (BaseRect.height - h) / 2,
+                w,
+                h
+            };
+            objectRatio = flexibleRect.width / flexibleRect.height;
+        }
+    }
+
+    return flexibleRect;
+}
+
 void DrawTextMine(Rectangle& panel, std::string& text, int align, float size, Color color, Color fillColor)
 {
     float font_size = panel.height * size;
@@ -1696,10 +1745,10 @@ void ImageToAudio(const Image image, const std::string filename, int audioFormat
         // Write interleaved stereo samples
         sf_count_t frames_written = sf_writef_short(sndfile, short_audio_data.data(), short_audio_data.size() / 2);
         if (frames_written != static_cast<sf_count_t>(short_audio_data.size() / 2)) {
-            std::cerr << "Error writing sound file: " << sf_strerror(sndfile) << std::endl;
+            std::cerr << "ERROR: === Error writing sound file: " << sf_strerror(sndfile) << " === " << std::endl;
         }
         else {
-            std::cout << "INFO: ======== Encoding Successful! ======== " << std::endl;
+            std::cout << "INFO: ------- Encoding Successful! ------- " << std::endl;
         }
 
         sf_close(sndfile);
