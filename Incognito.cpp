@@ -379,9 +379,10 @@ enum TextAlign {
 };
 
 enum NotificationSentiment {
+    EMPTY,
     SUCCESS,
     WARNING_TITLE_EMPTY,
-    WARNING_ONLY_PNG,
+    WARNING_ONLY_PNG_JPG,
 };
 
 ImageSize CalculateFlexibleImage();
@@ -396,6 +397,8 @@ int main()
     SetConfigFlags(FLAG_VSYNC_HINT);
 
     InitWindow((int)screen.w, (int)screen.h, p->title.c_str());
+    InitAudioDevice();
+
     SetWindowIcon(LoadImage(ICON_INCOGNITO));
     SetTargetFPS(60);
 
@@ -405,6 +408,7 @@ int main()
     InitializedIcons();
     OutputFolderTest();
 
+
     while (!WindowShouldClose()) {
         BeginDrawing();
         ClearBackground(p->bg_color);
@@ -413,6 +417,9 @@ int main()
 
         EndDrawing();
     }
+    
+    CloseAudioDevice();
+
 }
 
 void OutputFolderTest()
@@ -587,7 +594,7 @@ void UpdateDrawUI() {
                 }
                 else {
                     p->notificationON = true;
-                    p->notificationLevel = WARNING_ONLY_PNG;
+                    p->notificationLevel = WARNING_ONLY_PNG_JPG;
                 }
                 p->reload_setup = true;
 
@@ -861,10 +868,10 @@ void UpdateDrawUI() {
                                 DrawRectangleLinesExCustom(SliderColorBase, 0.5F, WHITE);
 
                                 Rectangle SliderColor{
-                                    (int)(SliderColorBase.x + (p->button_pad * 1)),
-                                    (int)(SliderColorBase.y + (p->button_pad * p->button_pad_factor)),
-                                    (int)(SliderColorBase.width - (p->button_pad * 2)),
-                                    (int)(SliderColorBase.height - (p->button_pad * 2 * p->button_pad_factor)),
+                                    (float)(int)(SliderColorBase.x + (p->button_pad * 1)),
+                                    (float)(int)(SliderColorBase.y + (p->button_pad * p->button_pad_factor)),
+                                    (float)(int)(SliderColorBase.width - (p->button_pad * 2)),
+                                    (float)(int)(SliderColorBase.height - (p->button_pad * 2 * p->button_pad_factor)),
                                 };
 
                                 Color UFTHaqWHITE{ 220,220,220,255 };
@@ -939,7 +946,7 @@ void UpdateDrawUI() {
                                     Rectangle dest{ SliderColor };
                                     DrawTexturePro(SliderGrayscaleTexture, source, dest, { 0,0 }, 0, WHITE);
                                     DrawRectangleRoundedLines(SliderColor, 0.1F, 10, .5F, WHITE);
-                                    DrawRectangleRounded(handlePointer, 0.1, 10, handlePointerColor);
+                                    DrawRectangleRounded(handlePointer, 0.1F, 10, handlePointerColor);
                                 }
 
                             }
@@ -1262,7 +1269,7 @@ void UpdateDrawUI() {
 
     // FOOTER
     {
-        std::string text = "INCOGNITO : MADE BY UFTHaq WITH RAYLIB";
+        std::string text = "INCOGNITO V2.0.0 : BY UFTHaq";
         DrawTextMine(PanelFooter, text, RIGHT, 0.6F, WHITE, BLANK);
 
         if (p->notificationON) {
@@ -1273,8 +1280,8 @@ void UpdateDrawUI() {
                 text = "SUCCESS EXPORT TO " + p->outputTitle;
                 DrawTextMine(PanelFooter, text, LEFT, 0.6F, WHITE, DARKGREEN);
             }
-            else if (p->notificationLevel == WARNING_ONLY_PNG) {
-                text = "SORRY COULDN'T LOAD IMAGE, ONLY SUPPORT PNG FORMAT";
+            else if (p->notificationLevel == WARNING_ONLY_PNG_JPG) {
+                text = "COULDN'T LOAD FILE, ONLY SUPPORT PNG & JPG FORMAT";
                 DrawTextMine(PanelFooter, text, LEFT, 0.6F, WHITE, RED);
             }
             else if (p->notificationLevel == WARNING_TITLE_EMPTY) {
@@ -1284,10 +1291,40 @@ void UpdateDrawUI() {
 
             if (time > 5.0F) {
                 p->notificationON = false;
+                p->notificationLevel = EMPTY;
                 time = 0.0F;
+
             }
         }
+    }
 
+    // PLAY AUDIO AFTER SUCCESS ENCODING
+    {
+        static Sound EncodeSound{};
+        static bool soundLoaded = false;
+        static bool soundPlayed = false;
+        if (p->notificationLevel == SUCCESS && !soundPlayed) {
+
+            if (!soundLoaded) {
+                EncodeSound = LoadSound(p->outputTitle.c_str());
+                soundLoaded = true;
+            }
+            SetSoundVolume(EncodeSound, 1.0F);
+
+            if (!IsSoundPlaying(EncodeSound) && !soundPlayed) {
+                PlaySound(EncodeSound);
+                soundPlayed = true;
+            }
+
+            if (!IsSoundPlaying(EncodeSound) && soundPlayed) {
+                UnloadSound(EncodeSound);
+            }
+        }
+        
+        if (p->notificationLevel == EMPTY) {
+            soundLoaded = false;
+            soundPlayed = false;
+        }
     }
 
 
