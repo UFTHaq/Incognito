@@ -44,9 +44,7 @@ https://www.youtube.com/watch?v=2cm3MWPysow
 - Libsndfile : [https://libsndfile.github.io/libsndfile](https://libsndfile.github.io/libsndfile/)
 
 ### Download:
-- Windows-x64 : <a href="https://github.com/UFTHaq/Incognito/releases/download/v.1.0.0/Incognito-v1.0.0-win64.zip">
- Incognito-v1.0.0-win64.zip
-  </a>
+- Windows-x64 : [Incognito-v2.0.0-win64.zip](https://github.com/UFTHaq/Incognito/releases/download/v.2.0.0/Incognito-v2.0.0-win64.zip)
 
 ## Changelog
 ### Since v2.0.0
