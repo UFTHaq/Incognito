@@ -46,8 +46,6 @@ void InitializedFonts();
 
 void OutputFolderTest();
 
-
-
 Rectangle FlexibleRectangle(Rectangle& BaseRect, float ObjectWidth, float ObjectHeight);
 
 void DrawTextMine(Rectangle& panel, std::string& text, int align, float size, Color color, Color fillColor);
@@ -1309,7 +1307,7 @@ void UpdateDrawUI() {
                 EncodeSound = LoadSound(p->outputTitle.c_str());
                 soundLoaded = true;
             }
-            SetSoundVolume(EncodeSound, 1.0F);
+            SetSoundVolume(EncodeSound, 0.75F);
 
             if (!IsSoundPlaying(EncodeSound) && !soundPlayed) {
                 PlaySound(EncodeSound);
